@@ -2,78 +2,106 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>M5 Trend Hunter - Manual Trader</title>
+    <title>Skaner M5 - 5min Sticky</title>
     <style>
-        body { background: #0e121a; color: white; font-family: sans-serif; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; padding: 20px; }
-        .card { background: #1c222d; padding: 15px; border-radius: 8px; border-left: 5px solid #333; transition: 0.3s; }
-        .card.active-buy { border-left-color: #00ff88; box-shadow: 0 0 15px rgba(0,255,136,0.2); }
-        .card.active-sell { border-left-color: #ff3366; box-shadow: 0 0 15px rgba(255,51,102,0.2); }
-        .pair { font-size: 1.2em; font-weight: bold; }
-        .timer { font-size: 0.8em; color: #888; margin-top: 5px; }
-        .status { font-size: 0.9em; margin-top: 5px; color: #00ff88; font-weight: bold; }
-        .indicator-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #1e1e1e; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #333; }
+        th { background-color: #2c2c2c; color: #00ff88; text-transform: uppercase; letter-spacing: 1px; }
+        .buy-row { background-color: rgba(0, 255, 136, 0.1); color: #00ff88; font-weight: bold; }
+        .sell-row { background-color: rgba(255, 51, 102, 0.1); color: #ff3366; font-weight: bold; }
+        .timer { font-family: monospace; color: #888; }
+        .neutral { color: #555; }
+        h1 { text-align: center; color: #00ff88; }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center;">M5 STRATEGY: 3x STRONG (5min HOLD)</h2>
-    <div id="scanner" class="grid"></div>
+    <h1>SKANER M5: STICKY SIGNALS (5 MIN)</h1>
+    <table id="scannerTable">
+        <thead>
+            <tr>
+                <th>Para Walutowa</th>
+                <th>Sygnał</th>
+                <th>Czas Pozostały</th>
+                <th>Status Trendu</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            </tbody>
+    </table>
 
     <script>
-        const HOLD_TIME = 300; // 5 minut w sekundach
-        let lockedSignals = {}; // Pamięć zablokowanych sygnałów
+        const HOLD_TIME = 300; // 5 minut
+        let stickySignals = {}; // Pamięć: { "EUR/USD": { expiry: timestamp, type: "BUY" } }
 
-        async function updateScanner() {
-            // Tutaj pobierasz dane ze swojego źródła (np. API Twojego obecnego skanera)
-            // Na potrzeby przykładu generujemy obiekt z danymi
-            const pairs = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "GOLD", "EUR/JPY"];
-            
-            pairs.forEach(pair => {
-                // SYMULACJA ODCZYTU: Tu wstaw swoją logikę sprawdzania 3x STRONG
-                // isTripleStrong = (osc == 'STRONG' && summ == 'STRONG' && ma == 'STRONG')
-                let isTripleStrong = Math.random() > 0.95; // Symulacja trafienia sygnału
-                let direction = "BUY"; 
+        // Funkcja symulująca pobieranie danych (tu podepniesz swój fetch)
+        async function fetchScannerData() {
+            // Tu wstaw kod pobierający dane z TradingView/Twojego API
+            // Zwracamy przykładowe trafienie dla testu:
+            return [
+                { p: "EUR/USD", osc: "STRONG BUY", sum: "STRONG BUY", ma: "STRONG BUY" },
+                { p: "GBP/JPY", osc: "STRONG SELL", sum: "STRONG SELL", ma: "STRONG SELL" },
+                { p: "AUD/USD", osc: "BUY", sum: "BUY", ma: "NEUTRAL" }
+            ];
+        }
 
-                const now = Math.floor(Date.now() / 1000);
+        async function updateLogic() {
+            const data = await fetchScannerData();
+            const now = Math.floor(Date.now() / 1000);
 
-                // LOGIKA PODTRZYMANIA (STICKY)
+            data.forEach(item => {
+                const isTripleStrong = item.osc.includes("STRONG") && 
+                                       item.sum.includes("STRONG") && 
+                                       item.ma.includes("STRONG");
+
                 if (isTripleStrong) {
-                    lockedSignals[pair] = {
+                    const type = item.osc.includes("BUY") ? "BUY" : "SELL";
+                    // Jeśli sygnał już jest, ale znowu jest 3x Strong -> odświeżamy czas do 5 min
+                    stickySignals[item.p] = {
                         expiry: now + HOLD_TIME,
-                        type: direction
+                        type: type
                     };
                 }
             });
-
-            render();
+            renderTable();
         }
 
-        function render() {
-            const container = document.getElementById('scanner');
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
             const now = Math.floor(Date.now() / 1000);
-            container.innerHTML = '';
+            tbody.innerHTML = '';
 
-            for (const [pair, data] of Object.entries(lockedSignals)) {
-                const timeLeft = data.expiry - now;
+            // Wyświetlamy tylko te pary, które mają aktywny "Sticky Signal"
+            const activePairs = Object.entries(stickySignals).filter(([p, data]) => data.expiry > now);
 
-                if (timeLeft > 0) {
-                    const card = document.createElement('div');
-                    card.className = `card ${data.type === 'BUY' ? 'active-buy' : 'active-sell'}`;
-                    card.innerHTML = `
-                        <div class="pair">${pair}</div>
-                        <div class="status">POTWIERDZONY ${data.type}</div>
-                        <div class="timer">Wygasa za: ${timeLeft}s</div>
-                        <div style="font-size: 10px; color: #555; margin-top:10px">INTERWAŁ M5</div>
-                    `;
-                    container.appendChild(card);
-                } else {
-                    delete lockedSignals[pair]; // Usuń wygasłe
-                }
+            if (activePairs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="neutral">Brak silnych trendów M5...</td></tr>';
+                return;
             }
+
+            activePairs.sort((a, b) => b[1].expiry - a[1].expiry).forEach(([pair, data]) => {
+                const timeLeft = data.expiry - now;
+                const rowClass = data.type === "BUY" ? "buy-row" : "sell-row";
+                
+                const row = `
+                    <tr class="${rowClass}">
+                        <td>${pair}</td>
+                        <td>3x STRONG ${data.type}</td>
+                        <td class="timer">${timeLeft}s</td>
+                        <td>TRZYMAJ POZYCJĘ</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            // Czyścimy stare sygnały z pamięci
+            Object.keys(stickySignals).forEach(p => {
+                if (stickySignals[p].expiry <= now) delete stickySignals[p];
+            });
         }
 
-        setInterval(updateScanner, 5000); // Odświeżaj dane co 5s
-        setInterval(render, 1000); // Odświeżaj zegary co 1s
+        setInterval(updateLogic, 5000); // Pobieraj nowe dane co 5s
+        setInterval(renderTable, 1000); // Odświeżaj zegary w tabeli co 1s
     </script>
 </body>
 </html>
