@@ -2,39 +2,53 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>M5 Sniper - Pełna Obsługa OTC & Commodities</title>
+    <title>M5 Sniper - OTC & Real Market</title>
     <style>
         body { background: #0b0e14; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; }
+        
         .card { 
             background: #151921; padding: 15px; border-radius: 10px; border-left: 5px solid #333;
-            transition: transform 0.2s ease; contain: content;
+            transition: transform 0.2s ease; position: relative;
         }
+
         .active-buy { border-left-color: #00ff88; box-shadow: 0 4px 15px rgba(0,255,136,0.1); }
         .active-sell { border-left-color: #ff3366; box-shadow: 0 4px 15px rgba(255,51,102,0.1); }
-        .pair { font-size: 1.1em; font-weight: bold; color: #f1f5f9; }
+        
+        .pair-name { font-size: 1.15em; font-weight: bold; color: #f1f5f9; display: block; margin-bottom: 5px; }
+        
+        /* Styl dla znacznika OTC */
+        .otc-badge { 
+            background: #f59e0b; color: black; font-size: 0.7em; 
+            padding: 2px 6px; border-radius: 4px; font-weight: 900;
+            vertical-align: middle; margin-left: 8px; text-transform: uppercase;
+        }
+
         .status-label { font-size: 0.85em; font-weight: bold; margin-top: 4px; }
         .status-buy { color: #00ff88; }
         .status-sell { color: #ff3366; }
+
+        .timer-container { margin-top: 12px; }
         .timer-val { 
-            font-family: monospace; font-size: 1.3em; color: white; 
-            background: #000; padding: 2px 8px; border-radius: 4px;
-            display: inline-block; margin-top: 10px;
+            font-family: monospace; font-size: 1.35em; color: white; 
+            background: #000; padding: 3px 8px; border-radius: 5px;
+            border: 1px solid #2d333f; display: inline-block;
         }
+
         #empty-msg { text-align: center; color: #334155; margin-top: 100px; font-size: 1.1em; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center; color: #475569;">M5 SNIPER (ACTIVE SCAN)</h2>
-    <div id="empty-msg">CZEKAM NA SYGNAŁ 3x STRONG (M5)...</div>
+    <h2 style="text-align: center; color: #475569; letter-spacing: 2px;">M5 SNIPER: DASHBOARD</h2>
+    <div id="empty-msg">SKANOWANIE RYNKU I OTC (M5)...</div>
     <div id="scanner" class="grid"></div>
 
     <script>
         const HOLD_TIME = 300;
         let lockedSignals = {};
 
-        // LISTA WSZYSTKICH 53 AKTYWÓW
+        // TWOJA PEŁNA LISTA 53 PAR Z POCKET OPTION
         const allPairs = [
             "EUR/USD", "EUR/USD (OTC)", "GBP/USD", "GBP/USD (OTC)", "USD/JPY", "USD/JPY (OTC)",
             "AUD/USD", "AUD/USD (OTC)", "EUR/GBP", "EUR/GBP (OTC)", "EUR/JPY", "EUR/JPY (OTC)",
@@ -48,7 +62,6 @@
         ];
 
         function getSafeId(name) {
-            // Zamienia "EUR/USD (OTC)" na "EURUSDOTC" dla bezpiecznego ID
             return "c-" + name.replace(/[^a-zA-Z]/g, '');
         }
 
@@ -56,9 +69,9 @@
             const now = Math.floor(Date.now() / 1000);
             const container = document.getElementById('scanner');
 
-            // SYMULACJA ODCZYTU - Teraz losuje z CAŁEJ listy 53 par
             allPairs.forEach(pair => {
-                let isTripleStrong = Math.random() > 0.985; // Symulacja trafienia
+                // Symulacja wykrycia 3x STRONG (Tu podepniesz swój fetch)
+                let isTripleStrong = Math.random() > 0.98; 
                 let direction = Math.random() > 0.5 ? "BUY" : "SELL";
 
                 if (isTripleStrong) {
@@ -68,14 +81,13 @@
                     if (!card) {
                         addCardToDOM(pair, direction, id);
                     } else {
-                        // PRZENOSZENIE NA KONIEC KOLEJKI
+                        // Jeśli sygnał się powtarza -> na koniec kolejki
                         container.appendChild(card);
                         card.className = `card ${direction === 'BUY' ? 'active-buy' : 'active-sell'}`;
                         const label = card.querySelector('.status-label');
                         label.className = `status-label ${direction === 'BUY' ? 'status-buy' : 'status-sell'}`;
                         label.innerText = `3x STRONG ${direction}`;
                     }
-                    // Reset czasu do 5:00
                     lockedSignals[pair] = { expiry: now + HOLD_TIME, type: direction };
                 }
             });
@@ -85,13 +97,20 @@
             const container = document.getElementById('scanner');
             document.getElementById('empty-msg').classList.add('hidden');
 
+            const isOTC = pair.includes("OTC");
             const div = document.createElement('div');
             div.id = id;
             div.className = `card ${type === 'BUY' ? 'active-buy' : 'active-sell'}`;
+            
+            // Budowanie nazwy z ewentualnym znacznikiem OTC
+            const nameHTML = isOTC 
+                ? `${pair.replace(' (OTC)', '')} <span class="otc-badge">OTC</span>` 
+                : pair;
+
             div.innerHTML = `
-                <div class="pair">${pair}</div>
+                <div class="pair-name">${nameHTML}</div>
                 <div class="status-label ${type === 'BUY' ? 'status-buy' : 'status-sell'}">3x STRONG ${type}</div>
-                <div><span class="timer-val">05:00</span></div>
+                <div class="timer-container"><span class="timer-val">05:00</span></div>
             `;
             container.appendChild(div);
         }
