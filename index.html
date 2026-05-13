@@ -1,197 +1,82 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M5 Trend Master - 53 Pary</title>
     <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M5 Sniper - Tylko 3x Strong</title>
+    <title>M5 Trend Hunter - Manual Trader</title>
     <style>
-        :root {
-            --bg: #0b0e14;
-            --card: #151921;
-            --green: #00ff95;
-            --red: #ff3366;
-            --text: #ffffff;
-            --dim: #64748b;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .header {
-            width: 100%;
-            max-width: 900px;
-            text-align: center;
-            padding: 20px;
-            margin-bottom: 20px;
-            background: var(--card);
-            border-radius: 15px;
-            border: 1px solid #2d333f;
-        }
-
-        .stats { color: var(--green); font-weight: bold; font-size: 1.2em; }
-
-        table {
-            width: 100%;
-            max-width: 900px;
-            border-collapse: collapse;
-            background: var(--card);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        th {
-            background: #1c222d;
-            padding: 15px;
-            color: var(--dim);
-            text-transform: uppercase;
-            font-size: 0.8em;
-            letter-spacing: 1px;
-        }
-
-        td {
-            padding: 15px;
-            text-align: center;
-            border-bottom: 1px solid #2d333f;
-            font-size: 1.1em;
-        }
-
-        .buy-row { color: var(--green); background: rgba(0, 255, 149, 0.05); }
-        .sell-row { color: var(--red); background: rgba(255, 51, 102, 0.05); }
-
-        .timer {
-            font-family: monospace;
-            background: #000;
-            padding: 5px 12px;
-            border-radius: 5px;
-            border: 1px solid #333;
-            font-size: 1.2em;
-        }
-
-        .empty-msg {
-            padding: 40px;
-            color: var(--dim);
-            font-style: italic;
-        }
-
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            font-weight: bold;
-            background: rgba(255,255,255,0.1);
-        }
+        body { background: #0e121a; color: white; font-family: sans-serif; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; padding: 20px; }
+        .card { background: #1c222d; padding: 15px; border-radius: 8px; border-left: 5px solid #333; transition: 0.3s; }
+        .card.active-buy { border-left-color: #00ff88; box-shadow: 0 0 15px rgba(0,255,136,0.2); }
+        .card.active-sell { border-left-color: #ff3366; box-shadow: 0 0 15px rgba(255,51,102,0.2); }
+        .pair { font-size: 1.2em; font-weight: bold; }
+        .timer { font-size: 0.8em; color: #888; margin-top: 5px; }
+        .status { font-size: 0.9em; margin-top: 5px; color: #00ff88; font-weight: bold; }
+        .indicator-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
     </style>
 </head>
 <body>
+    <h2 style="text-align: center;">M5 STRATEGY: 3x STRONG (5min HOLD)</h2>
+    <div id="scanner" class="grid"></div>
 
-<div class="header">
-    <h1 style="margin:0; font-size: 1.5em;">M5 SNIPER: TYLKO 3x STRONG</h1>
-    <div style="margin-top:10px;">Monitorowanie: <span class="stats">53 PARY (W tym OTC)</span></div>
-</div>
+    <script>
+        const HOLD_TIME = 300; // 5 minut w sekundach
+        let lockedSignals = {}; // Pamięć zablokowanych sygnałów
 
-<table id="sniperTable">
-    <thead>
-        <tr>
-            <th>Aktywo</th>
-            <th>Kierunek</th>
-            <th>Pozostały Czas</th>
-            <th>Akcja</th>
-        </tr>
-    </thead>
-    <tbody id="tableBody">
-        </tbody>
-</table>
+        async function updateScanner() {
+            // Tutaj pobierasz dane ze swojego źródła (np. API Twojego obecnego skanera)
+            // Na potrzeby przykładu generujemy obiekt z danymi
+            const pairs = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "GOLD", "EUR/JPY"];
+            
+            pairs.forEach(pair => {
+                // SYMULACJA ODCZYTU: Tu wstaw swoją logikę sprawdzania 3x STRONG
+                // isTripleStrong = (osc == 'STRONG' && summ == 'STRONG' && ma == 'STRONG')
+                let isTripleStrong = Math.random() > 0.95; // Symulacja trafienia sygnału
+                let direction = "BUY"; 
 
-<script>
-    const HOLD_TIME = 300; // 5 minut
-    let activeSignals = {};
+                const now = Math.floor(Date.now() / 1000);
 
-    // Pełna lista 53 par (w tym OTC i Surowce)
-    const allPairs = [
-        "EUR/USD", "EUR/USD (OTC)", "GBP/USD", "GBP/USD (OTC)", "USD/JPY", "USD/JPY (OTC)",
-        "AUD/USD", "AUD/USD (OTC)", "EUR/GBP", "EUR/GBP (OTC)", "EUR/JPY", "EUR/JPY (OTC)",
-        "GBP/JPY", "GBP/JPY (OTC)", "USD/CHF", "USD/CHF (OTC)", "USD/CAD", "USD/CAD (OTC)",
-        "AUD/JPY", "NZD/USD", "EUR/AUD", "GBP/AUD", "EUR/CAD", "GBP/CAD", "AUD/CAD",
-        "CHF/JPY", "NZD/JPY", "CAD/JPY", "GBP/CHF", "EUR/CHF", "AUD/NZD", "NZD/CAD",
-        "GOLD", "GOLD (OTC)", "SILVER", "SILVER (OTC)", "BRENT", "WTI", "PLATINUM",
-        "BTC/USD", "ETH/USD", "LTC/USD", "XRP/USD", "SOL/USD", "ADA/USD",
-        "EUR/CHF (OTC)", "GBP/CHF (OTC)", "AUD/CHF (OTC)", "NZD/CHF (OTC)",
-        "CAD/CHF (OTC)", "EUR/NZD (OTC)", "GBP/NZD (OTC)", "AUD/NZD (OTC)"
-    ];
+                // LOGIKA PODTRZYMANIA (STICKY)
+                if (isTripleStrong) {
+                    lockedSignals[pair] = {
+                        expiry: now + HOLD_TIME,
+                        type: direction
+                    };
+                }
+            });
 
-    async function checkScanner() {
-        const now = Math.floor(Date.now() / 1000);
-
-        // SYMULACJA ODCZYTU (Tu podepniesz swój fetch)
-        // Jeśli skaner znajdzie 3x Strong, dodaje parę do activeSignals
-        const found = [
-            // Przykład: { p: "EUR/USD (OTC)", type: "BUY" }
-        ];
-
-        found.forEach(hit => {
-            activeSignals[hit.p] = {
-                expiry: now + HOLD_TIME,
-                type: hit.type
-            };
-        });
-
-        render();
-    }
-
-    function render() {
-        const tbody = document.getElementById('tableBody');
-        const now = Math.floor(Date.now() / 1000);
-        tbody.innerHTML = '';
-
-        // Filtrujemy tylko aktywne sygnały, które nie wygasły
-        const activePairs = Object.entries(activeSignals).filter(([p, data]) => data.expiry > now);
-
-        if (activePairs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Czekam na sygnał 3x STRONG na M5...</td></tr>`;
-            return;
+            render();
         }
 
-        // Sortujemy od najświeższych
-        activePairs.sort((a, b) => b[1].expiry - a[1].expiry).forEach(([pair, data]) => {
-            const timeLeft = data.expiry - now;
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            const rowClass = data.type === 'BUY' ? 'buy-row' : 'sell-row';
+        function render() {
+            const container = document.getElementById('scanner');
+            const now = Math.floor(Date.now() / 1000);
+            container.innerHTML = '';
 
-            const row = `
-                <tr class="${rowClass}">
-                    <td><strong>${pair}</strong></td>
-                    <td><span class="badge">3x STRONG</span> ${data.type}</td>
-                    <td><span class="timer">${m}:${s.toString().padStart(2, '0')}</span></td>
-                    <td><strong>OTWÓRZ ${data.type === 'BUY' ? 'GÓRA' : 'DÓŁ'}</strong></td>
-                </tr>
-            `;
-            tbody.innerHTML += row;
-        });
+            for (const [pair, data] of Object.entries(lockedSignals)) {
+                const timeLeft = data.expiry - now;
 
-        // Czyszczenie pamięci
-        Object.keys(activeSignals).forEach(p => {
-            if (activeSignals[p].expiry <= now) delete activeSignals[p];
-        });
-    }
+                if (timeLeft > 0) {
+                    const card = document.createElement('div');
+                    card.className = `card ${data.type === 'BUY' ? 'active-buy' : 'active-sell'}`;
+                    card.innerHTML = `
+                        <div class="pair">${pair}</div>
+                        <div class="status">POTWIERDZONY ${data.type}</div>
+                        <div class="timer">Wygasa za: ${timeLeft}s</div>
+                        <div style="font-size: 10px; color: #555; margin-top:10px">INTERWAŁ M5</div>
+                    `;
+                    container.appendChild(card);
+                } else {
+                    delete lockedSignals[pair]; // Usuń wygasłe
+                }
+            }
+        }
 
-    setInterval(checkScanner, 5000); // Skanuj co 5s
-    setInterval(render, 1000);      // Odświeżaj widok co 1s
-</script>
-
+        setInterval(updateScanner, 5000); // Odświeżaj dane co 5s
+        setInterval(render, 1000); // Odświeżaj zegary co 1s
+    </script>
 </body>
 </html>
