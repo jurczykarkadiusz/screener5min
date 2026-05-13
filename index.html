@@ -2,10 +2,10 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>M5 Sniper - Pełna Lista 53 Aktywów</title>
+    <title>M5 Sniper - Pełna Obsługa OTC & Commodities</title>
     <style>
         body { background: #0b0e14; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; }
         .card { 
             background: #151921; padding: 15px; border-radius: 10px; border-left: 5px solid #333;
             transition: transform 0.2s ease; contain: content;
@@ -13,26 +13,28 @@
         .active-buy { border-left-color: #00ff88; box-shadow: 0 4px 15px rgba(0,255,136,0.1); }
         .active-sell { border-left-color: #ff3366; box-shadow: 0 4px 15px rgba(255,51,102,0.1); }
         .pair { font-size: 1.1em; font-weight: bold; color: #f1f5f9; }
-        .status-buy { color: #00ff88; font-size: 0.85em; font-weight: bold; }
-        .status-sell { color: #ff3366; font-size: 0.85em; font-weight: bold; }
+        .status-label { font-size: 0.85em; font-weight: bold; margin-top: 4px; }
+        .status-buy { color: #00ff88; }
+        .status-sell { color: #ff3366; }
         .timer-val { 
             font-family: monospace; font-size: 1.3em; color: white; 
-            background: #000; padding: 2px 6px; border-radius: 4px;
-            display: inline-block; margin-top: 8px;
+            background: #000; padding: 2px 8px; border-radius: 4px;
+            display: inline-block; margin-top: 10px;
         }
         #empty-msg { text-align: center; color: #334155; margin-top: 100px; font-size: 1.1em; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div id="empty-msg">SKANOWANIE 53 AKTYWÓW (M5)...</div>
+    <h2 style="text-align: center; color: #475569;">M5 SNIPER (ACTIVE SCAN)</h2>
+    <div id="empty-msg">CZEKAM NA SYGNAŁ 3x STRONG (M5)...</div>
     <div id="scanner" class="grid"></div>
 
     <script>
         const HOLD_TIME = 300;
         let lockedSignals = {};
 
-        // PEŁNA LISTA: Waluty, OTC, Commodities, Krypto
+        // LISTA WSZYSTKICH 53 AKTYWÓW
         const allPairs = [
             "EUR/USD", "EUR/USD (OTC)", "GBP/USD", "GBP/USD (OTC)", "USD/JPY", "USD/JPY (OTC)",
             "AUD/USD", "AUD/USD (OTC)", "EUR/GBP", "EUR/GBP (OTC)", "EUR/JPY", "EUR/JPY (OTC)",
@@ -45,29 +47,35 @@
             "CAD/CHF (OTC)", "EUR/NZD (OTC)", "GBP/NZD (OTC)", "AUD/NZD (OTC)"
         ];
 
+        function getSafeId(name) {
+            // Zamienia "EUR/USD (OTC)" na "EURUSDOTC" dla bezpiecznego ID
+            return "c-" + name.replace(/[^a-zA-Z]/g, '');
+        }
+
         async function updateScanner() {
             const now = Math.floor(Date.now() / 1000);
             const container = document.getElementById('scanner');
 
+            // SYMULACJA ODCZYTU - Teraz losuje z CAŁEJ listy 53 par
             allPairs.forEach(pair => {
-                // Logika wykrywania sygnału (TUTAJ PODEPNIESZ SWÓJ FETCH)
-                let isTripleStrong = Math.random() > 0.98; // Przykładowe trafienie
-                let direction = Math.random() > 0.5 ? "BUY" : "SELL"; 
+                let isTripleStrong = Math.random() > 0.985; // Symulacja trafienia
+                let direction = Math.random() > 0.5 ? "BUY" : "SELL";
 
                 if (isTripleStrong) {
-                    const id = `c-${pair.replace(/[^a-zA-Z]/g, '')}`;
+                    const id = getSafeId(pair);
                     let card = document.getElementById(id);
 
                     if (!card) {
                         addCardToDOM(pair, direction, id);
                     } else {
-                        // Przenieś na koniec, jeśli sygnał się powtórzył
+                        // PRZENOSZENIE NA KONIEC KOLEJKI
                         container.appendChild(card);
                         card.className = `card ${direction === 'BUY' ? 'active-buy' : 'active-sell'}`;
                         const label = card.querySelector('.status-label');
                         label.className = `status-label ${direction === 'BUY' ? 'status-buy' : 'status-sell'}`;
                         label.innerText = `3x STRONG ${direction}`;
                     }
+                    // Reset czasu do 5:00
                     lockedSignals[pair] = { expiry: now + HOLD_TIME, type: direction };
                 }
             });
@@ -83,7 +91,7 @@
             div.innerHTML = `
                 <div class="pair">${pair}</div>
                 <div class="status-label ${type === 'BUY' ? 'status-buy' : 'status-sell'}">3x STRONG ${type}</div>
-                <div class="timer-wrapper"><span class="timer-val">05:00</span></div>
+                <div><span class="timer-val">05:00</span></div>
             `;
             container.appendChild(div);
         }
@@ -95,7 +103,7 @@
             for (const pair in lockedSignals) {
                 const data = lockedSignals[pair];
                 const timeLeft = data.expiry - now;
-                const id = `c-${pair.replace(/[^a-zA-Z]/g, '')}`;
+                const id = getSafeId(pair);
                 const card = document.getElementById(id);
 
                 if (timeLeft > 0) {
