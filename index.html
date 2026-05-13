@@ -2,57 +2,47 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>M5 Sniper - Ultra Stable</title>
-    <style>
-        <!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <title>M5 Sniper - Dynamic Queue</title>
+    <title>M5 Sniper - Pełna Lista 53 Aktywów</title>
     <style>
         body { background: #0b0e14; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-        
         .card { 
-            background: #151921; 
-            padding: 15px; 
-            border-radius: 10px; 
-            border-left: 5px solid #333;
-            transition: transform 0.2s ease; /* Płynne przeskakiwanie */
+            background: #151921; padding: 15px; border-radius: 10px; border-left: 5px solid #333;
+            transition: transform 0.2s ease; contain: content;
         }
-
-        .active-buy { border-left-color: #00ff88; }
-        .active-sell { border-left-color: #ff3366; }
-        
-        .pair { font-size: 1.1em; font-weight: bold; }
+        .active-buy { border-left-color: #00ff88; box-shadow: 0 4px 15px rgba(0,255,136,0.1); }
+        .active-sell { border-left-color: #ff3366; box-shadow: 0 4px 15px rgba(255,51,102,0.1); }
+        .pair { font-size: 1.1em; font-weight: bold; color: #f1f5f9; }
         .status-buy { color: #00ff88; font-size: 0.85em; font-weight: bold; }
         .status-sell { color: #ff3366; font-size: 0.85em; font-weight: bold; }
-        
         .timer-val { 
-            font-family: monospace; 
-            font-size: 1.3em; 
-            color: #ffffff; 
-            background: #000; 
-            padding: 2px 6px; 
-            border-radius: 4px;
-            display: inline-block;
-            margin-top: 8px;
+            font-family: monospace; font-size: 1.3em; color: white; 
+            background: #000; padding: 2px 6px; border-radius: 4px;
+            display: inline-block; margin-top: 8px;
         }
-        
         #empty-msg { text-align: center; color: #334155; margin-top: 100px; font-size: 1.1em; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div id="empty-msg">CZEKAM NA SYGNAŁ M5...</div>
+    <div id="empty-msg">SKANOWANIE 53 AKTYWÓW (M5)...</div>
     <div id="scanner" class="grid"></div>
 
     <script>
         const HOLD_TIME = 300;
         let lockedSignals = {};
 
+        // PEŁNA LISTA: Waluty, OTC, Commodities, Krypto
         const allPairs = [
-            "EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CHF", "USD/CAD", "EUR/JPY", "GBP/JPY", "GOLD"
+            "EUR/USD", "EUR/USD (OTC)", "GBP/USD", "GBP/USD (OTC)", "USD/JPY", "USD/JPY (OTC)",
+            "AUD/USD", "AUD/USD (OTC)", "EUR/GBP", "EUR/GBP (OTC)", "EUR/JPY", "EUR/JPY (OTC)",
+            "GBP/JPY", "GBP/JPY (OTC)", "USD/CHF", "USD/CHF (OTC)", "USD/CAD", "USD/CAD (OTC)",
+            "AUD/JPY", "NZD/USD", "EUR/AUD", "GBP/AUD", "EUR/CAD", "GBP/CAD", "AUD/CAD",
+            "CHF/JPY", "NZD/JPY", "CAD/JPY", "GBP/CHF", "EUR/CHF", "AUD/NZD", "NZD/CAD",
+            "GOLD", "GOLD (OTC)", "SILVER", "SILVER (OTC)", "BRENT", "WTI", "PLATINUM",
+            "BTC/USD", "ETH/USD", "LTC/USD", "XRP/USD", "SOL/USD", "ADA/USD",
+            "EUR/CHF (OTC)", "GBP/CHF (OTC)", "AUD/CHF (OTC)", "NZD/CHF (OTC)",
+            "CAD/CHF (OTC)", "EUR/NZD (OTC)", "GBP/NZD (OTC)", "AUD/NZD (OTC)"
         ];
 
         async function updateScanner() {
@@ -60,8 +50,8 @@
             const container = document.getElementById('scanner');
 
             allPairs.forEach(pair => {
-                // SYMULACJA ODCZYTU (3x STRONG)
-                let isTripleStrong = Math.random() > 0.98; 
+                // Logika wykrywania sygnału (TUTAJ PODEPNIESZ SWÓJ FETCH)
+                let isTripleStrong = Math.random() > 0.98; // Przykładowe trafienie
                 let direction = Math.random() > 0.5 ? "BUY" : "SELL"; 
 
                 if (isTripleStrong) {
@@ -69,16 +59,15 @@
                     let card = document.getElementById(id);
 
                     if (!card) {
-                        // Jeśli nie ma - stwórz nową
                         addCardToDOM(pair, direction, id);
                     } else {
-                        // JEŚLI JUŻ JEST - przenieś na koniec kolejki (na dół)
+                        // Przenieś na koniec, jeśli sygnał się powtórzył
                         container.appendChild(card);
-                        // Zaktualizuj typ jeśli się zmienił (np. z BUY na SELL)
                         card.className = `card ${direction === 'BUY' ? 'active-buy' : 'active-sell'}`;
+                        const label = card.querySelector('.status-label');
+                        label.className = `status-label ${direction === 'BUY' ? 'status-buy' : 'status-sell'}`;
+                        label.innerText = `3x STRONG ${direction}`;
                     }
-
-                    // Odśwież czas do pełnych 5 minut
                     lockedSignals[pair] = { expiry: now + HOLD_TIME, type: direction };
                 }
             });
@@ -94,7 +83,7 @@
             div.innerHTML = `
                 <div class="pair">${pair}</div>
                 <div class="status-label ${type === 'BUY' ? 'status-buy' : 'status-sell'}">3x STRONG ${type}</div>
-                <div class="timer-val">05:00</div>
+                <div class="timer-wrapper"><span class="timer-val">05:00</span></div>
             `;
             container.appendChild(div);
         }
@@ -115,21 +104,15 @@
                         const m = Math.floor(timeLeft / 60);
                         const s = timeLeft % 60;
                         const timeStr = `${m}:${s < 10 ? '0'+s : s}`;
-                        
                         const timerElement = card.querySelector('.timer-val');
-                        if (timerElement.innerText !== timeStr) {
-                            timerElement.innerText = timeStr;
-                        }
+                        if (timerElement.innerText !== timeStr) timerElement.innerText = timeStr;
                     }
                 } else {
                     if (card) card.remove();
                     delete lockedSignals[pair];
                 }
             }
-
-            if (!activeFound) {
-                document.getElementById('empty-msg').classList.remove('hidden');
-            }
+            if (!activeFound) document.getElementById('empty-msg').classList.remove('hidden');
         }
 
         setInterval(updateScanner, 3000); 
