@@ -4,24 +4,29 @@
     <meta charset="UTF-8">
     <title>M5 Sniper - Ultra Stable</title>
     <style>
-        body { background: #0b0e14; color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; }
+        <!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>M5 Sniper - Dynamic Queue</title>
+    <style>
+        body { background: #0b0e14; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
         
-        /* Karta renderowana tylko raz */
         .card { 
             background: #151921; 
             padding: 15px; 
             border-radius: 10px; 
-            border-left: 5px solid #333; 
-            contain: content; /* Optymalizacja wydajności */
+            border-left: 5px solid #333;
+            transition: transform 0.2s ease; /* Płynne przeskakiwanie */
         }
 
-        .active-buy { border-left-color: #00ff88 !important; outline: 1px solid rgba(0,255,136,0.1); }
-        .active-sell { border-left-color: #ff3366 !important; outline: 1px solid rgba(255,51,102,0.1); }
+        .active-buy { border-left-color: #00ff88; }
+        .active-sell { border-left-color: #ff3366; }
         
-        .pair { font-size: 1.1em; font-weight: bold; color: #f1f5f9; }
-        .status-buy { color: #00ff88; font-size: 0.9em; font-weight: bold; }
-        .status-sell { color: #ff3366; font-size: 0.9em; font-weight: bold; }
+        .pair { font-size: 1.1em; font-weight: bold; }
+        .status-buy { color: #00ff88; font-size: 0.85em; font-weight: bold; }
+        .status-sell { color: #ff3366; font-size: 0.85em; font-weight: bold; }
         
         .timer-val { 
             font-family: monospace; 
@@ -39,50 +44,57 @@
     </style>
 </head>
 <body>
-    <div id="empty-msg">OCZEKIWANIE NA SYGNAŁ M5...</div>
+    <div id="empty-msg">CZEKAM NA SYGNAŁ M5...</div>
     <div id="scanner" class="grid"></div>
 
     <script>
         const HOLD_TIME = 300;
         let lockedSignals = {};
 
-        // Twoja lista par
         const allPairs = [
             "EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CHF", "USD/CAD", "EUR/JPY", "GBP/JPY", "GOLD"
         ];
 
         async function updateScanner() {
             const now = Math.floor(Date.now() / 1000);
+            const container = document.getElementById('scanner');
 
             allPairs.forEach(pair => {
-                // SYMULACJA ODCZYTU
+                // SYMULACJA ODCZYTU (3x STRONG)
                 let isTripleStrong = Math.random() > 0.98; 
                 let direction = Math.random() > 0.5 ? "BUY" : "SELL"; 
 
                 if (isTripleStrong) {
-                    if (!lockedSignals[pair]) {
-                        addCardToDOM(pair, direction, now + HOLD_TIME);
+                    const id = `c-${pair.replace(/[^a-zA-Z]/g, '')}`;
+                    let card = document.getElementById(id);
+
+                    if (!card) {
+                        // Jeśli nie ma - stwórz nową
+                        addCardToDOM(pair, direction, id);
+                    } else {
+                        // JEŚLI JUŻ JEST - przenieś na koniec kolejki (na dół)
+                        container.appendChild(card);
+                        // Zaktualizuj typ jeśli się zmienił (np. z BUY na SELL)
+                        card.className = `card ${direction === 'BUY' ? 'active-buy' : 'active-sell'}`;
                     }
+
+                    // Odśwież czas do pełnych 5 minut
                     lockedSignals[pair] = { expiry: now + HOLD_TIME, type: direction };
                 }
             });
         }
 
-        function addCardToDOM(pair, type, expiry) {
+        function addCardToDOM(pair, type, id) {
             const container = document.getElementById('scanner');
-            const msg = document.getElementById('empty-msg');
-            msg.classList.add('hidden');
-
-            const id = `c-${pair.replace(/[^a-zA-Z]/g, '')}`;
-            if (document.getElementById(id)) return;
+            document.getElementById('empty-msg').classList.add('hidden');
 
             const div = document.createElement('div');
             div.id = id;
             div.className = `card ${type === 'BUY' ? 'active-buy' : 'active-sell'}`;
             div.innerHTML = `
                 <div class="pair">${pair}</div>
-                <div class="${type === 'BUY' ? 'status-buy' : 'status-sell'}">3x STRONG ${type}</div>
-                <div class="timer-val">--:--</div>
+                <div class="status-label ${type === 'BUY' ? 'status-buy' : 'status-sell'}">3x STRONG ${type}</div>
+                <div class="timer-val">05:00</div>
             `;
             container.appendChild(div);
         }
@@ -104,7 +116,6 @@
                         const s = timeLeft % 60;
                         const timeStr = `${m}:${s < 10 ? '0'+s : s}`;
                         
-                        // KLUCZ: Aktualizujemy tylko jeśli tekst się zmienił
                         const timerElement = card.querySelector('.timer-val');
                         if (timerElement.innerText !== timeStr) {
                             timerElement.innerText = timeStr;
@@ -121,9 +132,8 @@
             }
         }
 
-        // Separacja logiki odświeżania
-        setInterval(updateScanner, 3000); // Rzadsze sprawdzanie nowych sygnałów
-        setInterval(updateTimers, 500);   // Częstsze sprawdzanie czasu, ale bez przerysowania DOM
+        setInterval(updateScanner, 3000); 
+        setInterval(updateTimers, 500);   
     </script>
 </body>
 </html>
